@@ -13,15 +13,15 @@ Lệnh in ra ba phần: các event trong trace (`reply`, `decision`, `model_over
 ## Mẫu điền (mỗi bạn 1 case, lấy từ trial đang fail trong report)
 
 | Trường | Nội dung |
-|---|---|
-| Trial | `<shape> <claim>@<seed>`, run ID trong report |
-| Triệu chứng | Grader nào fail; reply nói gì so với ledger ghi gì |
-| Bước sai đầu tiên | Số thứ tự event + kind + trích payload (≤1 dòng) |
-| Vì sao là bước *đầu tiên* | Các bước trước đó đúng ra sao (dẫn số event) |
-| Failure mode | Mã FM-xx trong `docs/failure_taxonomy.md` |
-| Đối chứng | Cùng claim@seed trên shape `fixed`: bước đó khác thế nào |
-| Regression test | Tên test + grader/assert nào bắt được; đã thấy fail trên variant lỗi và pass trên `fixed` chưa |
-| Chưa chắc chắn | Điều trace không chứng minh được |
+| --- | --- |
+| Trial | `seeded_regression C-002@11` |
+| Triệu chứng | Grader Lab 8 báo `FAIL (status resolved != denied)`. Ledger ghi nhận `refund_vnd=20000`, `refund_count=1` trong khi nhãn chuẩn kỳ vọng là từ chối (`status=denied`, `refund_vnd=0`). |
+| Bước sai đầu tiên | Bước 3: `model_override` payload: `{"delay_days": 5}` (Ghi đè số ngày giao trễ từ 2 ngày lên 5 ngày theo nội dung ticket, bỏ qua dữ liệu thực tế từ DB). |
+| Vì sao là bước đầu tiên | Bước 1 (`handoff`) và Bước 2 (`investigator`) hoàn toàn đúng: tool `lookup_order` tra cứu DB ra chính xác đơn `O-202` có `delay_days: 2` (chưa đủ điều kiện hoàn ship theo chính sách). Sang bước 3, agent bị override thông tin thành 5 ngày dẫn đến bước 4 tính quote sai và bước 6 phát sinh hoàn tiền sai. |
+| Failure mode | `FM-03` (ticket_trust — tin lời khai của ticket hơn dữ liệu DB) dẫn tới lỗi kéo theo ở `FM-08` / `FM-04`. |
+| Đối chứng | Trên shape `fixed` (cùng `C-002@11`): Không có bước `model_override`. Bước 2 tra cứu DB ra `delay_days: 2` được giữ nguyên sang bước 3 `quote` với `amount_vnd: 0, reason: "no_entitlement"`, và bước 4 trả lời từ chối hoàn tiền hợp lệ (`PASS`). |
+| Regression test | Grader `db_fact_kept` / assert kiểm tra không bị ghi đè thông tin từ DB; test kiểm tra `ledger["refund_vnd"] == 0` và `status == "denied"`. |
+| Chưa chắc chắn | MockLLM thực hiện override theo rule cố định của variant `seeded_regression`, chưa phản ánh đầy đủ tính bất định (non-deterministic) của LLM thực tế khi gặp prompt injection phức tạp. |
 
 ## Quy tắc
 

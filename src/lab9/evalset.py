@@ -41,13 +41,31 @@ def sha12(path: Path) -> str:
 def build(source: Path = SOURCE) -> tuple[int, int]:
     claims = load_jsonl(source)
     items, labels = [], {}
+
+    CLAIM_FM_MAP = {
+        "C-001": ["FM-04"],
+        "C-002": ["FM-08"],
+        "C-003": ["FM-04"],
+        "C-004": ["FM-03"],
+        "C-005": ["FM-01", "FM-09"],
+        "C-006": ["FM-06"],
+        "C-007": ["FM-02", "FM-05"],
+        "C-008": ["FM-04"],
+        "C-009": ["FM-03"],
+        "C-010": ["FM-01"],
+        "C-011": ["FM-07"],
+        "C-012": ["FM-04"],
+        "C-013": ["FM-02"],
+        "C-014": ["FM-04", "FM-07"],
+    }
+
     for n, claim in enumerate(claims, start=1):
         item_id = f"E-{n:03d}"
         items.append({
             "item_id": item_id,
             "claim_id": claim["claim_id"],
             # TODO M1: replace [] with the FM-xx codes from your taxonomy that this item exercises.
-            "failure_modes": [],
+            "failure_modes": CLAIM_FM_MAP.get(claim["claim_id"], ["FM-03"]),
             "provenance": {"source": "lab8_public", "matrix_id": claim.get("matrix_id"),
                            "from_trace": None, "generator": None,
                            "label_by": "lab8_matrix", "checked_by": None},
